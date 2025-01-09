@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from database.create_db import create_database
 
 app = FastAPI(title="FastAPI",
               description="Тут будет описание",
@@ -9,3 +10,12 @@ app = FastAPI(title="FastAPI",
 async def hello():
     return {"status" : 200,
             "message" : "hello"}
+
+@app.on_event("startup")
+async def startup():
+    await create_database()
+    print("База данных создана")
+
+@app.on_event("shutdown")
+async def shutdown():
+    print("Приложение завершило работу")
