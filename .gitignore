@@ -5,7 +5,7 @@ Thumbs.db
 # Виртуальное окружение
 venv/
 env/
-
+.venv
 # Кэш Python
 __pycache__/
 *.py[cod]
