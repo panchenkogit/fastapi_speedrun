@@ -1,6 +1,7 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
+from app.exeptions.base_exeptions import NotFoundError, DublicateContentError, MultipleBooksFoundError
 
 from sqlalchemy import select, exists
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,8 +20,7 @@ async def get_all_books(session: AsyncSession = Depends(get_db)) -> List[Book]:
     result = query.scalars().all()
 
     if not result:
-        raise HTTPException(status_code=404,
-                            detail="Книги не найдены.")
+        raise NotFoundError()
 
     return result
 
@@ -43,8 +43,7 @@ async def find_book(parametr: int | str, session: AsyncSession) -> Book:
         result = query.scalar_one_or_none()
 
         if not result:
-            raise HTTPException(status_code=404,
-                                detail="Книга не найдена.")
+            raise NotFoundError()
         
         return result
     
@@ -53,14 +52,11 @@ async def find_book(parametr: int | str, session: AsyncSession) -> Book:
         results = query.scalars().all()
 
         if not results:
-            raise HTTPException(status_code=404,
-                                detail="Книга не найдена.")
+            raise NotFoundError()
         
         if len(results) > 1:
             book_titles = [{"id": book.id, "Название": book.title, "Автор": book.author} for book in results[:5]]
-            raise HTTPException(status_code=400,
-                                detail={"message": "Найдено несколько книг. Уточните запрос.",
-                                        "titles": book_titles})
+            raise MultipleBooksFoundError(titles=book_titles)
         
         return results[0]
 
@@ -71,8 +67,7 @@ async def add_book(book: BookCreate, session: AsyncSession = Depends(get_db)) ->
     result = query.scalar()
 
     if result:
-        raise HTTPException(status_code=403,
-                            detail="Такая книга уже существует.")
+        raise DublicateContentError()
     
     new_book = BookDB(
         title=book.title,
@@ -94,8 +89,7 @@ async def delete_book(id: int, session: AsyncSession = Depends(get_db)):
     result = query.scalar_one_or_none()
 
     if not result:
-        raise HTTPException(status_code=404,
-                            detail="Книга не найдена.")
+        raise NotFoundError()
 
     await session.delete(result)
     await session.commit()
@@ -108,13 +102,11 @@ async def update_book(book_id: int, book: BookUpdate, session: AsyncSession = De
     result = query.scalar_one_or_none()
 
     if not result:
-        raise HTTPException(status_code=404,
-                            detail="Книга не найдена.")
+        raise NotFoundError()
 
     book_data = book.model_dump(exclude_unset=True)
     if not book_data:
-        raise HTTPException(status_code=400,
-                            detail="Нет данных для обновления.")
+        raise NotFoundError()
 
     for key, value in book_data.items():
         setattr(result, key, value)

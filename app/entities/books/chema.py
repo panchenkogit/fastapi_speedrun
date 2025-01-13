@@ -17,8 +17,8 @@ class Book(BaseBook):
         from_attributes = True
 
 class BookUpdate(BaseModel):
-    title: str | None = Field(None, max_length=30, description="Название")
-    author: str | None = Field(None, max_length=15, description="Автор")
+    title: str | None = Field(None, max_length=75, description="Название")
+    author: str | None = Field(None, max_length=30, description="Автор")
     description: str | None = Field(None, max_length=100, description="Описание")
     year: int | None = Field(None, gt=0, lt=2025, description="Год издания")
 
