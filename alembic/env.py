@@ -1,33 +1,31 @@
-import asyncio
 from logging.config import fileConfig
+from sqlalchemy import create_engine, pool
 from alembic import context
 
-# Импортируйте ваши существующие настройки (движок и сессии)
-from database.connect import Base, engine, async_session  # Подключаем уже существующий движок и сессию
-from config import SQL_DB
+from config import SYNC_SQL_DB   # Используем синхронную строку подключения
+from database.connect import Base
+from app.entities.books.model import Book
 
-# Это объект конфигурации Alembic, который предоставляет доступ
-# к значениям в .ini файле.
+
+# Это объект конфигурации Alembic, который предоставляет
+# доступ к значениям внутри .ini файла
 config = context.config
 
-# Интерпретирует конфигурационный файл для Python logging.
-# Эта строка настраивает логгеры.
+# Интерпретация файла конфигурации для настройки логирования
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Добавьте объект MetaData вашего модуля здесь для поддержки 'autogenerate'
+# Добавьте объект MetaData ваших моделей для поддержки autogenerate
+# Здесь мы указываем метаданные всех ваших моделей
+# Например, Product, User и Diary
+# target_metadata содержит metadata всех моделей
+
 target_metadata = Base.metadata
 
-
 def run_migrations_offline() -> None:
-    """Запуск миграций в 'offline' режиме.
-
-    Здесь настраивается контекст только с URL-адресом, а не с движком,
-    и не требуется DBAPI.
-    """
-    url = SQL_DB
+    """Запуск миграций в оффлайн-режиме."""
     context.configure(
-        url=url,
+        url=SYNC_SQL_DB,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -36,30 +34,25 @@ def run_migrations_offline() -> None:
     with context.begin_transaction():
         context.run_migrations()
 
+def run_migrations_online() -> None:
+    """Запуск миграций в онлайн-режиме."""
+    # Используем синхронный движок для Alembic
+    connectable = create_engine(
+        SYNC_SQL_DB,
+        poolclass=pool.NullPool,
+        future=True,  # Включаем поддержку новой версии SQLAlchemy
+    )
 
-async def run_migrations_online() -> None:
-    """Запуск миграций в 'online' режиме.
-
-    В этом случае нужно создать асинхронное подключение.
-    """
-    # Используем уже существующий асинхронный движок (engine) и сессию (async_session)
-    async with engine.begin() as connection:
+    with connectable.connect() as connection:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
         )
 
-        await context.run_migrations()
+        with context.begin_transaction():
+            context.run_migrations()
 
-
-async def run_migrations() -> None:
-    """Запуск миграций в зависимости от того, онлайн или оффлайн."""
-    if context.is_offline_mode():
-        run_migrations_offline()
-    else:
-        await run_migrations_online()
-
-
-# Запуск асинхронных миграций
-if __name__ == "__main__":
-    asyncio.run(run_migrations())
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()
