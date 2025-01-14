@@ -15,13 +15,11 @@ from database.connect import get_db
 router = APIRouter(prefix="/book", tags=['Books'])
 
 @router.get('/all')
-async def get_all_books(session: AsyncSession = Depends(get_db)) -> List[Book]:
-    query = await session.execute(select(BookDB))
+async def get_all_books(limit: int = 10, offset: int = 0, session: AsyncSession = Depends(get_db)) -> List[Book]:
+    query = await session.execute(select(BookDB).limit(limit).offset(offset))
     result = query.scalars().all()
-
     if not result:
         raise NotFoundError()
-
     return result
 
 
