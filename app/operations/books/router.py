@@ -17,10 +17,10 @@ from database.connect import get_db
 router = APIRouter(prefix="/book", tags=["Books"])
 
 
-@router.get("/all", description="Получение всех книг по 10 штук на странице")
-async def get_all_books(
-    limit: int = 10, offset: int = 0, session: AsyncSession = Depends(get_db)
-) -> List[Book]:
+@router.get('/all', description="Получение всех книг по 10 шутк на странице")
+async def get_all_books(limit: int = 10,
+                        offset: int = 0,
+                        session: AsyncSession = Depends(get_db)) -> List[Book]:
     query = await session.execute(select(BookDB).limit(limit).offset(offset))
     result = query.scalars().all()
     if not result:
@@ -28,9 +28,10 @@ async def get_all_books(
     return result
 
 
-@router.get("/find/{parametr}", description="Поиск книги по ID, полному названию или его части")
-async def search_book(parametr: int | str, session: AsyncSession = Depends(get_db)):
-    try:
+@router.get('/find/{parametr}', description="Поиск книги по ID,полному названию или его части")
+async def search_book(parametr: int | str,
+                      session: AsyncSession = Depends(get_db)):
+    try: 
         book_id = int(parametr)
         book = await find_book(book_id, session)
     except ValueError:
@@ -38,7 +39,8 @@ async def search_book(parametr: int | str, session: AsyncSession = Depends(get_d
     return book
 
 
-async def find_book(parametr: int | str, session: AsyncSession) -> Book:
+async def find_book(parametr: int | str,
+                    session: AsyncSession) -> Book:
     if isinstance(parametr, int):
         query = await session.execute(select(BookDB).where(BookDB.id == parametr))
         result = query.scalar_one_or_none()
@@ -66,10 +68,9 @@ async def find_book(parametr: int | str, session: AsyncSession) -> Book:
 
 
 @router.post("/add", description="Добавление новой книги")
-async def add_book(book: BookCreate, session: AsyncSession = Depends(get_db)) -> Book:
-    query = await session.execute(
-        select(exists(BookDB).where(BookDB.author == book.author, BookDB.title == book.title))
-    )
+async def add_book(book: BookCreate,
+                   session: AsyncSession = Depends(get_db)) -> Book:
+    query = await session.execute(select(exists(BookDB).where(BookDB.author == book.author, BookDB.title == book.title)))
     result = query.scalar()
 
     if result:
@@ -90,7 +91,8 @@ async def add_book(book: BookCreate, session: AsyncSession = Depends(get_db)) ->
 
 
 @router.delete("/{id}", description="Удаление книги по ID. Получить ID можно по пути /find/{parametr}")
-async def delete_book(id: int, session: AsyncSession = Depends(get_db)):
+async def delete_book(id: int,
+                      session: AsyncSession = Depends(get_db)):
     query = await session.execute(select(BookDB).where(BookDB.id == id))
     result = query.scalar_one_or_none()
 
@@ -102,10 +104,10 @@ async def delete_book(id: int, session: AsyncSession = Depends(get_db)):
     return {"detail": f"Книга с ID {id} удалена."}
 
 
-@router.patch("/{book_id}", description="Обновление книги по ID. Получить ID можно по пути /find/{parametr}")
-async def update_book(
-    book_id: int, book: BookUpdate, session: AsyncSession = Depends(get_db)
-):
+@router.patch('/{book_id}', description="Поиск книги по ID. Получить ID можно по пути /find/{parametr}")
+async def update_book(book_id: int,
+                      book: BookUpdate,
+                      session: AsyncSession = Depends(get_db)):
     query = await session.execute(select(BookDB).where(BookDB.id == book_id))
     result = query.scalar_one_or_none()
 
