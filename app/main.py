@@ -9,7 +9,7 @@ app = FastAPI(title="FastAPI",
                 contact={
         "name": "Евгений",
         "email": "odosaol@yandex.ru",
-    },)
+    })
 
 app.include_router(books_router)
 
